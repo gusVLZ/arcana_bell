@@ -1,6 +1,6 @@
 {
-    "name": "arcana_bell",
-    "short_name": "arcana_bell",
+    "name": "Smart Bell",
+    "short_name": "Smart Bell",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

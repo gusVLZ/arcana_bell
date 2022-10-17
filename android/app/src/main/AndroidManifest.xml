@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.arcana_bell">
    <application
-        android:label="arcana_bell"
+        android:label="Smart Bell"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
