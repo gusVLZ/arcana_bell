@@ -7,7 +7,13 @@
         {
             "name": "arcana_bell",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+        },
+        {
+            "name": "arcana_bell_web",
+            "request": "launch",
+            "type": "dart",
+            "args": ["-d", "web-server","--web-port", "5000"],
         },
         {
             "name": "arcana_bell (profile mode)",

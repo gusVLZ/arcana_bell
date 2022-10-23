@@ -1,7 +1,14 @@
+import 'bells/bells.dart';
 import 'package:flutter/material.dart';
+import 'home/home.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() {
   runApp(const MyApp());
+  Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -10,63 +17,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ArcanaBell',
-      theme: ThemeData(
-          colorScheme: const ColorScheme.dark(
-              secondary: Color.fromARGB(255, 239, 83, 80),
-              onSecondary: Colors.white,
-              surface: Color.fromARGB(255, 239, 83, 80))),
-      home: const MyHomePage(title: 'Smart Bell'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'Pressionou o botão',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-            const Text(
-              'vezes',
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
-    );
+        title: 'ArcanaBell',
+        theme: ThemeData(
+            useMaterial3: true, colorScheme: const ColorScheme.dark()),
+        home: const MyHomePage(title: 'Smart Bell'),
+        routes: <String, WidgetBuilder>{
+          "bells": (BuildContext context) => const Bells(),
+        });
   }
 }
