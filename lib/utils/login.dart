@@ -42,7 +42,7 @@ class Login {
     try {
       bool user = (await _googleSignIn.signIn())?.id != null;
       if (context != null && user) {
-        Navigator.pushNamed(context, "home");
+        Navigator.pushReplacementNamed(context, "home");
       }
     } catch (error) {
       stderr.writeln(error);
@@ -52,7 +52,7 @@ class Login {
   void handleSignOut(BuildContext? context) async {
     await _googleSignIn.disconnect();
     if (context != null) {
-      Navigator.pushNamed(context, "login");
+      Navigator.pushReplacementNamed(context, "login");
     }
   }
 }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
-class Bells extends StatefulWidget {
-  const Bells({Key? key}) : super(key: key);
+import '../utils/login.dart';
 
+class Bells extends StatefulWidget {
+  const Bells({Key? key, required this.title}) : super(key: key);
+  final String title;
   @override
   _BellsState createState() => _BellsState();
 }
@@ -12,8 +14,9 @@ class _BellsState extends State<Bells> {
   Widget build(BuildContext context) {
     return Center(
       child: Text(
-        "Usuário logado!",
+        "${widget.title} de ${login!.currentUser!.displayName!}",
         style: Theme.of(context).textTheme.displaySmall,
+        textAlign: TextAlign.center,
       ),
     );
   }

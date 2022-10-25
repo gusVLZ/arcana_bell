@@ -23,9 +23,9 @@ class _LoadingState extends State<Loading> {
     bool silent = (await login?.silentSignIn()) ?? false;
     UsuarioLogado = silent;
     if (UsuarioLogado == true) {
-      Navigator.pushNamed(context, "home");
+      Navigator.pushReplacementNamed(context, "home");
     } else if (UsuarioLogado == false) {
-      Navigator.pushNamed(context, "login");
+      Navigator.pushReplacementNamed(context, "login");
     }
   }
 

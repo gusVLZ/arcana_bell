@@ -31,7 +31,6 @@ class _SmartBellState extends State<SmartBell> {
         routes: <String, WidgetBuilder>{
           "home": (BuildContext context) => const Home(),
           "login": (BuildContext context) => const Login(),
-          "bells": (BuildContext context) => const Bells(),
         });
   }
 }
