@@ -14,34 +14,59 @@ class Login {
     ],
   );
 
-  GoogleSignInAccount? currentUser;
+  GoogleSignInAccount? currentUserGoogle;
+  UserCredential? currentUser;
 
   listenChanges() {
     _googleSignIn.onCurrentUserChanged
         .listen((GoogleSignInAccount? account) async {
-      currentUser = account;
-      if (currentUser != null) {
+      currentUserGoogle = account;
+      if (currentUserGoogle != null) {
         final GoogleSignInAuthentication? googleAuth =
-            await currentUser?.authentication;
+            await currentUserGoogle?.authentication;
 
         final credential = GoogleAuthProvider.credential(
           accessToken: googleAuth?.accessToken,
           idToken: googleAuth?.idToken,
         );
 
-        await FirebaseAuth.instance.signInWithCredential(credential);
+        currentUser =
+            await FirebaseAuth.instance.signInWithCredential(credential);
+      } else {
+        currentUser = null;
       }
     });
   }
 
   Future<bool> silentSignIn() async {
-    return (await _googleSignIn.signInSilently())?.id != null;
+    currentUserGoogle = await _googleSignIn.signInSilently();
+    final GoogleSignInAuthentication? googleAuth =
+        await currentUserGoogle?.authentication;
+
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth?.accessToken,
+      idToken: googleAuth?.idToken,
+    );
+
+    currentUser = await FirebaseAuth.instance.signInWithCredential(credential);
+
+    return currentUser?.user?.uid != null;
   }
 
   void handleSignIn(BuildContext? context) async {
     try {
-      bool user = (await _googleSignIn.signIn())?.id != null;
-      if (context != null && user) {
+      currentUserGoogle = await _googleSignIn.signIn();
+      final GoogleSignInAuthentication? googleAuth =
+          await currentUserGoogle?.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth?.accessToken,
+        idToken: googleAuth?.idToken,
+      );
+
+      currentUser =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+      if (context != null && currentUser?.user != null) {
         Navigator.pushReplacementNamed(context, "home");
       }
     } catch (error) {
@@ -51,6 +76,7 @@ class Login {
 
   void handleSignOut(BuildContext? context) async {
     await _googleSignIn.disconnect();
+    currentUser = null;
     if (context != null) {
       Navigator.pushReplacementNamed(context, "login");
     }
@@ -61,7 +87,7 @@ Login? login;
 
 loginStart() {
   login = Login();
-  login?.silentSignIn();
+  //login?.silentSignIn();
 }
 
 //Having a clear function is pretty handy

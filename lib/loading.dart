@@ -6,25 +6,25 @@ class Loading extends StatefulWidget {
   const Loading({Key? key}) : super(key: key);
 
   @override
-  _LoadingState createState() => _LoadingState();
+  LoadingState createState() => LoadingState();
 }
 
-class _LoadingState extends State<Loading> {
-  bool? UsuarioLogado;
+class LoadingState extends State<Loading> {
+  bool? usuarioLogado;
 
   @override
   void initState() {
-    super.initState();
     loginStart();
     login?.listenChanges();
+    super.initState();
   }
 
   tryLogging(BuildContext context) async {
     bool silent = (await login?.silentSignIn()) ?? false;
-    UsuarioLogado = silent;
-    if (UsuarioLogado == true) {
+    usuarioLogado = silent;
+    if (usuarioLogado == true) {
       Navigator.pushReplacementNamed(context, "home");
-    } else if (UsuarioLogado == false) {
+    } else if (usuarioLogado == false) {
       Navigator.pushReplacementNamed(context, "login");
     }
   }
@@ -40,7 +40,7 @@ class _LoadingState extends State<Loading> {
           ClipRRect(
               borderRadius: BorderRadius.circular(16.0),
               child: Image.asset("assets/muteBell.jpg", width: 250)),
-          CircularProgressIndicator()
+          const CircularProgressIndicator()
         ]));
   }
 }
