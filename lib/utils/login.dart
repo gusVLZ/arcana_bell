@@ -40,6 +40,9 @@ class Login {
 
   Future<bool> silentSignIn() async {
     currentUserGoogle = await _googleSignIn.signInSilently();
+    if (currentUserGoogle == null) {
+      return false;
+    }
     final GoogleSignInAuthentication? googleAuth =
         await currentUserGoogle?.authentication;
 

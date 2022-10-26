@@ -45,6 +45,7 @@ class _HomeState extends State<Home> {
             autoDismiss: false,
             duration: const Duration(minutes: 5),
             slideDismissDirection: DismissDirection.up,
+            contentPadding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
             subtitle: Text(notification.body ?? ""));
         flutterLocalNotificationsPlugin.show(
             notification.hashCode,
@@ -55,7 +56,6 @@ class _HomeState extends State<Home> {
                 channel.id,
                 channel.name,
                 channelDescription: channel.description,
-                icon: android.smallIcon,
               ),
             ));
       }
