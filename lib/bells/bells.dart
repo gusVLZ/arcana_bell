@@ -83,11 +83,11 @@ class BellsState extends State<Bells> {
           trailing: userBells.contains(bells[index].id)
               ? ElevatedButton(
                   onPressed: () async {
+                    await FirebaseMessaging.instance
+                        .unsubscribeFromTopic("bell_${bells[index].id}");
                     setState(() {
                       userBells.remove(bells[index].id);
                     });
-                    await FirebaseMessaging.instance
-                        .unsubscribeFromTopic("bell_${bells[index].id}");
                     await FirebaseFirestore.instance
                         .collection('user')
                         .doc(token)
@@ -97,11 +97,11 @@ class BellsState extends State<Bells> {
                 )
               : ElevatedButton(
                   onPressed: () async {
+                    await FirebaseMessaging.instance
+                        .subscribeToTopic("bell_${bells[index].id}");
                     setState(() {
                       userBells.add(bells[index].id);
                     });
-                    await FirebaseMessaging.instance
-                        .subscribeToTopic("bell_${bells[index].id}");
                     await FirebaseFirestore.instance
                         .collection('user')
                         .doc(token)

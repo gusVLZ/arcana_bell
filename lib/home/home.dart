@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:arcana_bell/bells/bells.dart';
 import 'package:arcana_bell/history/history.dart';
 import 'package:arcana_bell/profile/profile.dart';
@@ -17,8 +19,6 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  late final FirebaseMessaging _messaging;
-
   @override
   void initState() {
     setupNotification();
@@ -29,37 +29,33 @@ class _HomeState extends State<Home> {
   }
 
   void setupNotification() async {
-    var initialzationSettingsAndroid =
+    /*var initialzationSettingsAndroid =
         const AndroidInitializationSettings('@mipmap/ic_launcher');
     var initializationSettings =
-        InitializationSettings(android: initialzationSettingsAndroid);
+        InitializationSettings(android: initialzationSettingsAndroid);*/
 
-    flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    //flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    Future<void> firebaseMessagingForegroundHandler(
+        RemoteMessage message) async {
+      //await Firebase.initializeApp();
+      stdout.writeln('Handling a background message ${message.messageId}');
+      stdout.writeln(message.data);
       RemoteNotification? notification = message.notification;
       AndroidNotification? android = message.notification?.android;
+
       if (notification != null && android != null) {
-        showSimpleNotification(Text(notification.title ?? "Nova notificação"),
+        showSimpleNotification(Text("${notification.title ?? ''} from Simple"),
             background: Theme.of(context).dialogBackgroundColor,
             autoDismiss: false,
             duration: const Duration(minutes: 5),
             slideDismissDirection: DismissDirection.up,
             contentPadding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
             subtitle: Text(notification.body ?? ""));
-        flutterLocalNotificationsPlugin.show(
-            notification.hashCode,
-            notification.title,
-            notification.body,
-            NotificationDetails(
-              android: AndroidNotificationDetails(
-                channel.id,
-                channel.name,
-                channelDescription: channel.description,
-              ),
-            ));
       }
-    });
+    }
+
+    FirebaseMessaging.onMessage.listen(firebaseMessagingForegroundHandler);
   }
 
   checkForInitialMessage() async {
