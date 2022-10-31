@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
+import '../model/bell.dart';
 import '../utils/login.dart';
 
 class Bells extends StatefulWidget {
@@ -79,7 +80,7 @@ class BellsState extends State<Bells> {
         itemCount: bells.length,
         shrinkWrap: true,
         itemBuilder: (context, index) => ListTile(
-          title: Text(bells[index].description),
+          title: Text(bells[index].description ?? "Sem descrição"),
           trailing: userBells.contains(bells[index].id)
               ? ElevatedButton(
                   onPressed: () async {
@@ -116,10 +117,4 @@ class BellsState extends State<Bells> {
           label: const Text("NOVA CAMPAINHA"))
     ]);
   }
-}
-
-class Bell {
-  Bell(this.id, this.description);
-  String id;
-  String description;
 }

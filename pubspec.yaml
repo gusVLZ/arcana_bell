@@ -44,6 +44,8 @@ dependencies:
   firebase_messaging: ^14.0.2
   overlay_support: ^2.0.1
   cloud_firestore: ^4.0.2
+  esp_smartconfig: ^1.1.10
+  network_info_plus: ^3.0.1
 
 dev_dependencies:
   flutter_test:

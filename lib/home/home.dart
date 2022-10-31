@@ -5,10 +5,8 @@ import 'package:arcana_bell/history/history.dart';
 import 'package:arcana_bell/profile/profile.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:overlay_support/overlay_support.dart';
 
-import '../main.dart';
 import '../utils/login.dart';
 
 class Home extends StatefulWidget {

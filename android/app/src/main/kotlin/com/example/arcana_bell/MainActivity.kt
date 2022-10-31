@@ -1,4 +1,4 @@
-package com.example.arcana_bell
+package com.two.arcana_bell
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.arcana_bell">
+    package="com.two.arcana_bell">
    <application
         android:label="Smart Bell"
         android:name="${applicationName}"
