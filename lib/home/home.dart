@@ -27,16 +27,8 @@ class _HomeState extends State<Home> {
   }
 
   void setupNotification() async {
-    /*var initialzationSettingsAndroid =
-        const AndroidInitializationSettings('@mipmap/ic_launcher');
-    var initializationSettings =
-        InitializationSettings(android: initialzationSettingsAndroid);*/
-
-    //flutterLocalNotificationsPlugin.initialize(initializationSettings);
-
     Future<void> firebaseMessagingForegroundHandler(
         RemoteMessage message) async {
-      //await Firebase.initializeApp();
       stdout.writeln('Handling a background message ${message.messageId}');
       stdout.writeln(message.data);
       RemoteNotification? notification = message.notification;

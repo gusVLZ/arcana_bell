@@ -8,7 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:esp_smartconfig/esp_smartconfig.dart';
-
+import 'package:permission_handler/permission_handler.dart';
 import '../utils/login.dart';
 
 class AddBell extends StatefulWidget {
@@ -28,11 +28,25 @@ class AddBellState extends State<AddBell> {
 
   Bell bell = Bell(null, null);
 
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void deactivate() {
+    provisioner.stop();
+    super.deactivate();
+  }
+
   _saveBellInfo() async {
     String token = login!.currentUser!.user!.uid;
 
-    await FirebaseFirestore.instance.collection('bell').add(
-        {"description": bell.description, "mac": bell.mac}).then((value) async {
+    await FirebaseFirestore.instance.collection('bell').add({
+      "description": bell.description,
+      "mac": bell.mac,
+      "users": [token]
+    }).then((value) async {
       bell.id = value.id;
 
       await FirebaseFirestore.instance
@@ -46,51 +60,52 @@ class AddBellState extends State<AddBell> {
       await FirebaseFirestore.instance
           .collection('user')
           .doc(token)
-          .set({'bells': userBells}, SetOptions(merge: false));
+          .set({'bells': userBells}, SetOptions(merge: true));
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Configurando...'),
+        content: Text('Configurado com sucesso'),
         duration: Duration(seconds: 20),
       ),
     );
+
+    Navigator.of(context).pushNamed("home");
   }
 
   _startSmartConfig() async {
     if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Configurando...'),
-          duration: Duration(seconds: 20),
-        ),
-      );
-      var timer = Timer(
-          const Duration(seconds: 20),
-          () => {
-                if (bell.mac == null)
-                  {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            'Erro ao cadastrar campainha, verifique se o dispositivo está próximo e em modo de configuração',
-                            style: TextStyle(color: Colors.white)),
-                        backgroundColor: Colors.red,
-                      ),
-                    )
-                  }
-              });
+      try {
+        Map<Permission, PermissionStatus> statuses =
+            await [Permission.location].request();
+        _formKey.currentState!.save();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Configurando...'),
+            duration: Duration(seconds: 20),
+          ),
+        );
 
-      provisioner.listen((response) {
-        stdout.writeln("Device ${response.bssidText} connected to WiFi!");
-        bell.mac = response.bssidText;
+        var timer = Timer(
+            const Duration(seconds: 20),
+            () => {
+                  if (bell.mac == null)
+                    {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Erro ao cadastrar campainha, verifique se o dispositivo está próximo e em modo de configuração',
+                              style: TextStyle(color: Colors.white)),
+                          backgroundColor: Colors.red,
+                        ),
+                      )
+                    }
+                });
 
         timer.cancel();
-
-        _saveBellInfo();
-      });
-
+      } catch (e) {
+        stderr.writeln(e);
+      }
       try {
         String? ssid = await info.getWifiName();
         String? bssid = await info.getWifiBSSID();
@@ -99,20 +114,36 @@ class AddBellState extends State<AddBell> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                  'Conecte-se ao wifi 2GHZ e Ligue a localização do aparelho'),
+                  'Conecte-se ao wifi 2Ghz e Ligue a localização do aparelho'),
             ),
           );
         } else {
+          if (ssid.startsWith('"')) {
+            ssid = ssid.substring(1, (ssid.length - 1));
+          }
+          provisioner.listen((response) {
+            stdout.writeln("Device ${response.bssidText} connected to WiFi!");
+            bell.mac = response.bssidText;
+            _saveBellInfo();
+          });
           await provisioner.start(ProvisioningRequest.fromStrings(
             ssid: ssid,
             bssid: bssid!,
             password: password,
           ));
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Erro ao cadastrar campainha, verifique se a senha do wifi informada está correta',
+                  style: TextStyle(color: Colors.white)),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       } catch (e) {
         stderr.writeln(e);
       }
-      timer.cancel();
     }
   }
 
@@ -162,7 +193,7 @@ class AddBellState extends State<AddBell> {
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () => _startSmartConfig(),
+                  onPressed: () async => await _startSmartConfig(),
                   child: const Text('CONFIGURAR'),
                 ),
               ],

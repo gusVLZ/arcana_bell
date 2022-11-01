@@ -46,6 +46,7 @@ dependencies:
   cloud_firestore: ^4.0.2
   esp_smartconfig: ^1.1.10
   network_info_plus: ^3.0.1
+  permission_handler: ^10.2.0
 
 dev_dependencies:
   flutter_test:

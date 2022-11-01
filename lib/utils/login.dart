@@ -74,8 +74,9 @@ class Login {
       if (context != null && currentUser?.user != null) {
         Navigator.pushReplacementNamed(context, "home");
       }
-    } catch (error) {
+    } catch (error, s) {
       stderr.writeln(error);
+      stderr.writeln(s);
     }
   }
 
