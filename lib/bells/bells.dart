@@ -55,7 +55,16 @@ class BellsState extends State<Bells> {
           .collection('user')
           .doc(token)
           .get()
-          .then((value) => userBells = value.get("bells"));
+          .then((value) async {
+        if (value.exists) {
+          userBells = value.get("bells");
+        } else {
+          await FirebaseFirestore.instance
+              .collection('user')
+              .doc(token)
+              .set({"bells": []});
+        }
+      });
 
       setState(() {
         userBells = userBells;
