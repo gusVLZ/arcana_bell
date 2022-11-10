@@ -1,10 +1,15 @@
 #include "EEPROM.h"
 
 #include "WiFi.h"
+#include <HTTPClient.h>
+#include <algorithm>
 
 bool rebootButton;
+bool isConnected;
 int countSecsReboot;
+
 void setup() {
+  isConnected = false;
   String wifiSSID;
   String wifiPassword;
   float checkEEPROM;
@@ -28,12 +33,17 @@ void setup() {
     WiFi.mode(WIFI_AP_STA);
     WiFi.beginSmartConfig();
     Serial.println("Aguardando configuração.");
+    int timeOut = 0;
     while (!WiFi.smartConfigDone()) {
       pisca = !pisca;
       delay(500);
 
       digitalWrite(LED_BUILTIN, pisca ? HIGH : LOW);
       Serial.print(".");
+      if(timeOut > 60){
+        ESP.restart();
+      }
+      timeOut++;
     }
 
     Serial.println("recebeu dados smartconfig");
@@ -42,7 +52,7 @@ void setup() {
     Serial.println("tentando se conectar ao wifi");
     while (WiFi.status() != WL_CONNECTED) {
       delay(500);
-      digitalWrite(LED_BUILTIN, pisca ? HIGH : LOW);
+      digitalWrite(LED_BUILTIN, HIGH);
       Serial.print(".");
     }
     Serial.println("WiFi conectado.");
@@ -67,28 +77,78 @@ void setup() {
   Serial.println(wifiPassword.c_str());
   Serial.println("tentando se conectar ao wifi a partir dos dados armazenados");
   WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
-
+  int timeOutWifi = 0;
   while (WiFi.status() != WL_CONNECTED) {
     digitalWrite(LED_BUILTIN, pisca ? HIGH : LOW);
     delay(500);
+    timeOutWifi++;
     Serial.print(".");
+    if (timeOutWifi > 40) {
+      break;
+    }
   }
-  digitalWrite(LED_BUILTIN, LOW);
-  Serial.println("conectado ao wifi");
+  if (timeOutWifi > 40) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    Serial.println("não foi possível conectar ao wifi");
+  } else {
+    isConnected = true;
+    digitalWrite(LED_BUILTIN, LOW);
+    Serial.println("conectado ao wifi");
+  }
+}
 
+String cleanMac(String mac) {
+  String temp = "";
+  for (int i = 0; i < mac.length(); ++i) {
+    if (mac[i] != ':') {
+      temp = temp + mac[i];
+    }
+  }
+  return temp;
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  int bellButton = digitalRead(0);
   rebootButton = digitalRead(0);
-  if (rebootButton == LOW) {
-    Serial.println("botão da campainha foi pressionado");
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(500);
-    digitalWrite(LED_BUILTIN, LOW);
-  }
   while (rebootButton == LOW) {
     rebootButton = digitalRead(0);
+
+    if (countSecsReboot == 0) {
+      Serial.println("botão da campainha foi pressionado");
+
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(500);
+      digitalWrite(LED_BUILTIN, LOW);
+    
+      if (isConnected) {
+        Serial.println("tentando enviar post");
+        WiFiClientSecure client;
+        client.setInsecure();
+        const char* serverName = "https://us-central1-arcanabell-6c682.cloudfunctions.net/sendNotification";
+        client.connect(serverName, 443);
+        HTTPClient http;
+        http.begin(client, serverName);
+        http.addHeader("Content-Type", "application/json");
+        
+        Serial.print("mac da placa: ");
+        Serial.println(WiFi.macAddress());
+        String wifiMacString = cleanMac(WiFi.macAddress());
+        Serial.print("mac da placa: ");
+        Serial.println(wifiMacString);
+        
+        String json = "{\"topic\":\"bell_" + wifiMacString + "\",\"title\":\"ArcanaBell\",\"message\":\"Alguém se encontra em sua porta\"}";
+        Serial.print("json da requisição: ");
+        Serial.println(json);
+        
+        int httpResponseCode = http.POST(json);
+        Serial.print("resposta do server: ");
+        Serial.println(httpResponseCode);
+        
+        http.end();
+      }
+    }
+    
     Serial.println(countSecsReboot);
     if (countSecsReboot > 9) {
       digitalWrite(LED_BUILTIN, HIGH);
@@ -110,6 +170,8 @@ void loop() {
       ESP.restart();
     }
     countSecsReboot++;
-    delay(500);
   }
+
+  delay(100);
+  countSecsReboot = 0;
 }

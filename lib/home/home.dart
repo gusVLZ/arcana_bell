@@ -5,6 +5,7 @@ import 'package:arcana_bell/history/history.dart';
 import 'package:arcana_bell/profile/profile.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:overlay_support/overlay_support.dart';
 
 import '../utils/login.dart';
@@ -17,6 +18,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  String? messageId;
   @override
   void initState() {
     setupNotification();
@@ -34,14 +36,22 @@ class _HomeState extends State<Home> {
       RemoteNotification? notification = message.notification;
       AndroidNotification? android = message.notification?.android;
 
-      if (notification != null && android != null) {
-        showSimpleNotification(Text("${notification.title ?? ''} from Simple"),
-            background: Theme.of(context).dialogBackgroundColor,
+      if (notification != null &&
+          android != null &&
+          messageId != message.messageId) {
+        messageId = message.messageId;
+        showSimpleNotification(
+            Text(
+              notification.title ?? '',
+            ),
+            background: Colors.green,
             autoDismiss: false,
-            duration: const Duration(minutes: 5),
+            duration: const Duration(seconds: 20),
             slideDismissDirection: DismissDirection.up,
             contentPadding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
-            subtitle: Text(notification.body ?? ""));
+            subtitle: Text(
+              notification.body ?? "",
+            ));
       }
     }
 

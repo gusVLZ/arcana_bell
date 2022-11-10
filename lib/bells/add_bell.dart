@@ -22,11 +22,14 @@ class AddBell extends StatefulWidget {
 class AddBellState extends State<AddBell> {
   final _formKey = GlobalKey<FormState>();
   final info = NetworkInfo();
-  final provisioner = Provisioner.espTouch();
+  Provisioner? provisioner;
   String? password;
 
   bool _passwordVisible = false;
   bool _isLoading = false;
+
+  Timer? timer;
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? configController;
 
   List userBells = [];
 
@@ -37,65 +40,84 @@ class AddBellState extends State<AddBell> {
     _isLoading = false;
     _passwordVisible = false;
     [Permission.location].request();
+
     super.initState();
   }
 
   @override
   void deactivate() {
-    provisioner.stop();
+    provisioner?.stop();
     super.deactivate();
   }
 
-  _saveBellInfo() async {
+  _saveBellInfo(context) async {
     String token = login!.currentUser!.user!.uid;
 
-    await FirebaseFirestore.instance.collection('bell').doc(bell.id).set({
-      "description": bell.description,
-      "mac": bell.mac,
-      "users": [token]
-    }).then((value) async {
-      await FirebaseFirestore.instance
-          .collection('user')
-          .doc(token)
-          .get()
-          .then((value) => userBells = value.get("bells"));
+    try {
+      await FirebaseFirestore.instance.collection('bell').doc(bell.id).set({
+        "description": bell.description,
+        "mac": bell.mac,
+        "users": [token]
+      }, SetOptions(merge: true)).then((value) async {
+        await FirebaseFirestore.instance
+            .collection('user')
+            .doc(token)
+            .get()
+            .then((value) => userBells = value.get("bells"));
 
-      userBells.add(bell.id);
+        userBells.add(bell.id);
 
-      await FirebaseFirestore.instance
-          .collection('user')
-          .doc(token)
-          .set({'bells': userBells}, SetOptions(merge: true));
+        await FirebaseFirestore.instance
+            .collection('user')
+            .doc(token)
+            .set({'bells': userBells}, SetOptions(merge: true));
 
-      await FirebaseMessaging.instance.subscribeToTopic("bell_${bell.id}");
-    });
+        await FirebaseMessaging.instance.subscribeToTopic("bell_${bell.id}");
+      });
+    } catch (e) {
+      stderr.writeln(e.toString());
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Configurado com sucesso'),
-        duration: Duration(seconds: 20),
+        duration: Duration(seconds: 5),
       ),
     );
 
-    Navigator.of(context).pushNamed("home");
+    Navigator.of(context).pushReplacementNamed("home");
   }
 
-  _startSmartConfig() async {
+  _startSmartConfig(context) async {
     setState(() {
       _isLoading = true;
     });
     if (_formKey.currentState!.validate()) {
       try {
         _formKey.currentState!.save();
-        ScaffoldMessenger.of(context).showSnackBar(
+        configController = ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Configurando...'),
             duration: Duration(seconds: 20),
           ),
         );
+        provisioner = Provisioner.espTouch();
+        try {
+          provisioner?.listen((response) {
+            stdout.writeln("Device ${response.bssidText} connected to WiFi!");
+            bell.mac = response.bssidText.toUpperCase();
+            bell.id = response.bssidText.toUpperCase().replaceAll(":", "");
+            timer?.cancel();
+            configController?.close();
+            _saveBellInfo(context);
+          });
+        } catch (e) {
+          stderr.writeln(e);
+        }
 
-        var timer = Timer(const Duration(seconds: 20), () {
+        timer = Timer(const Duration(seconds: 20), () {
           if (bell.mac == null) {
+            configController?.close();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
@@ -107,7 +129,7 @@ class AddBellState extends State<AddBell> {
             setState(() {
               _isLoading = false;
             });
-            provisioner.stop();
+            provisioner?.stop();
           }
         });
         String? ssid = await info.getWifiName();
@@ -124,27 +146,12 @@ class AddBellState extends State<AddBell> {
           if (ssid.startsWith('"')) {
             ssid = ssid.substring(1, (ssid.length - 1));
           }
-          provisioner.listen((response) {
-            stdout.writeln("Device ${response.bssidText} connected to WiFi!");
-            bell.mac = response.bssidText;
-            bell.id = response.bssidText.replaceAll(":", "");
-            timer.cancel();
-            _saveBellInfo();
-          });
-          await provisioner.start(ProvisioningRequest.fromStrings(
+
+          await provisioner?.start(ProvisioningRequest.fromStrings(
             ssid: ssid,
             bssid: bssid!,
             password: password,
           ));
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'Erro ao cadastrar campainha, verifique se a senha do wifi informada está correta',
-                  style: TextStyle(color: Colors.white)),
-              backgroundColor: Colors.red,
-            ),
-          );
         }
       } catch (e) {
         stderr.writeln(e);
@@ -214,7 +221,7 @@ class AddBellState extends State<AddBell> {
                       ),
                       const SizedBox(height: 50),
                       ElevatedButton(
-                        onPressed: () async => await _startSmartConfig(),
+                        onPressed: () async => await _startSmartConfig(context),
                         child: const Text('CONFIGURAR'),
                       ),
                     ],

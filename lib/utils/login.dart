@@ -2,7 +2,9 @@
 
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -81,6 +83,21 @@ class Login {
   }
 
   void handleSignOut(BuildContext? context) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('user')
+          .doc(login!.currentUser!.user!.uid)
+          .get()
+          .then((value) async {
+        var bells = value.get("bells");
+        for (var element in bells) {
+          await FirebaseMessaging.instance
+              .unsubscribeFromTopic("bell_$element");
+        }
+      });
+    } catch (e) {
+      stderr.writeln(e.toString());
+    }
     await _googleSignIn.disconnect();
     currentUser = null;
     if (context != null) {

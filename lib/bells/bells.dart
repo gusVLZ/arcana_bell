@@ -28,27 +28,6 @@ class BellsState extends State<Bells> {
     stdout.writeln(token);
   }
 
-  getBells() async {
-    try {
-      QuerySnapshot qShot = (await FirebaseFirestore.instance
-          .collection('bell')
-          .where("users", arrayContains: token)
-          .get());
-
-      bells = [];
-
-      for (var doc in qShot.docs) {
-        bells.add(Bell(doc.id, doc.get("description")));
-      }
-
-      setState(() {
-        bells = bells;
-      });
-    } catch (e) {
-      stderr.writeln(e.toString());
-    }
-  }
-
   getUserBells() async {
     try {
       await FirebaseFirestore.instance
@@ -58,16 +37,34 @@ class BellsState extends State<Bells> {
           .then((value) async {
         if (value.exists) {
           userBells = value.get("bells");
+
+          for (var element in userBells) {
+            await FirebaseMessaging.instance.subscribeToTopic("bell_$element");
+          }
+
+          bells = [];
+          if (userBells.isNotEmpty) {
+            QuerySnapshot qShot = (await FirebaseFirestore.instance
+                .collection('bell')
+                .where("__name__", whereIn: userBells)
+                .get());
+
+            for (var doc in qShot.docs) {
+              bells.add(Bell(doc.id, doc.get("description")));
+            }
+          }
         } else {
           await FirebaseFirestore.instance
               .collection('user')
               .doc(token)
               .set({"bells": []});
+          bells = [];
         }
       });
 
       setState(() {
         userBells = userBells;
+        bells = bells;
       });
     } catch (e) {
       stderr.writeln(e.toString());
@@ -78,7 +75,6 @@ class BellsState extends State<Bells> {
   void initState() {
     getToken();
     getUserBells();
-    getBells();
     super.initState();
   }
 
@@ -90,34 +86,24 @@ class BellsState extends State<Bells> {
         shrinkWrap: true,
         itemBuilder: (context, index) => ListTile(
           title: Text(bells[index].description ?? "Sem descrição"),
-          trailing: userBells.contains(bells[index].id)
-              ? ElevatedButton(
-                  onPressed: () async {
-                    await FirebaseMessaging.instance
-                        .unsubscribeFromTopic("bell_${bells[index].id}");
-                    setState(() {
-                      userBells.remove(bells[index].id);
-                    });
-                    await FirebaseFirestore.instance
-                        .collection('user')
-                        .doc(token)
-                        .set({'bells': userBells}, SetOptions(merge: false));
-                  },
-                  child: const Text('Ignorar'),
-                )
-              : ElevatedButton(
-                  onPressed: () async {
-                    await FirebaseMessaging.instance
-                        .subscribeToTopic("bell_${bells[index].id}");
-                    setState(() {
-                      userBells.add(bells[index].id);
-                    });
-                    await FirebaseFirestore.instance
-                        .collection('user')
-                        .doc(token)
-                        .set({'bells': userBells}, SetOptions(merge: false));
-                  },
-                  child: const Text('Receber')),
+          trailing: IconButton(
+              onPressed: () async {
+                try {
+                  await FirebaseMessaging.instance
+                      .unsubscribeFromTopic("bell_${bells[index].id}");
+                  setState(() {
+                    userBells.remove(bells[index].id);
+                  });
+                  await FirebaseFirestore.instance
+                      .collection('user')
+                      .doc(token)
+                      .set({'bells': userBells}, SetOptions(merge: false));
+                } catch (e) {
+                  stderr.writeln(e.toString());
+                }
+                getUserBells();
+              },
+              icon: const Icon(Icons.delete)),
         ),
       ),
       ElevatedButton.icon(
