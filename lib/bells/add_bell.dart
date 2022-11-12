@@ -88,7 +88,7 @@ class AddBellState extends State<AddBell> {
         ),
       );
 
-      Navigator.of(context).pushReplacementNamed("home");
+      Navigator.of(context).pop();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -128,7 +128,7 @@ class AddBellState extends State<AddBell> {
         configController = ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Configurando...'),
-            duration: Duration(seconds: 20),
+            duration: Duration(seconds: 90),
           ),
         );
         provisioner = Provisioner.espTouch();
@@ -146,7 +146,7 @@ class AddBellState extends State<AddBell> {
           stderr.writeln(e);
         }
 
-        timer = Timer(const Duration(seconds: 20), () {
+        timer = Timer(const Duration(seconds: 90), () {
           if (bell.mac == null) {
             _setupError();
           }

@@ -14,7 +14,7 @@ class LoginState extends State<Login> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: const Text("Smart Bell"),
+          title: const Text("Arcana Bell"),
         ),
         body: Center(
             child: Column(

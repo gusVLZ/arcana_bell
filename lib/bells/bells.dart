@@ -39,7 +39,7 @@ class BellsState extends State<Bells> {
           userBells = value.get("bells");
 
           for (var element in userBells) {
-            await FirebaseMessaging.instance.subscribeToTopic("bell_$element");
+            FirebaseMessaging.instance.subscribeToTopic("bell_$element");
           }
 
           bells = [];
@@ -113,7 +113,12 @@ class BellsState extends State<Bells> {
                 ),
               ),
               ElevatedButton.icon(
-                  onPressed: () => Navigator.pushNamed(context, "add_bell"),
+                  onPressed: () {
+                    Navigator.pushNamed(context, "add_bell")
+                        .then((value) async {
+                      await getUserBells();
+                    });
+                  },
                   icon: const Icon(Icons.add),
                   label: const Text("NOVA CAMPAINHA")),
             ]));

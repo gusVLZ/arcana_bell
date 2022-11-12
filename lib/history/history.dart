@@ -47,7 +47,7 @@ class HistoryState extends State<History> {
   void initState() {
     getHistory();
     setState(() {
-      timer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      timer = Timer.periodic(const Duration(seconds: 20), (timer) {
         getHistory();
       });
     });

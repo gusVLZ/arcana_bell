@@ -25,8 +25,8 @@ AndroidNotificationChannel channel = AndroidNotificationChannel(
     enableLights: true,
     enableVibration: true,
     showBadge: true,
-    vibrationPattern:
-        Int64List.fromList([0, 500, 200, 800, 400, 1000, 800, 3000]));
+    vibrationPattern: Int64List.fromList(
+        [0, 500, 200, 800, 400, 1000, 800, 3000, 1000, 30000]));
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {

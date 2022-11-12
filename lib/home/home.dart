@@ -88,7 +88,7 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Smart Bell"),
+        title: const Text("Arcana Bell"),
         actions: [
           IconButton(
               onPressed: () => login!.handleSignOut(context),

@@ -41,7 +41,7 @@ void setup() {
       digitalWrite(LED_BUILTIN, pisca ? HIGH : LOW);
       Serial.print(timeOut);
       Serial.print(" ");
-      if(timeOut > 60){
+      if(timeOut > 1000){
         ESP.restart();
       }
       timeOut++;
