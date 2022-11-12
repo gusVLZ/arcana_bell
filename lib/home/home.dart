@@ -2,10 +2,8 @@ import 'dart:io';
 
 import 'package:arcana_bell/bells/bells.dart';
 import 'package:arcana_bell/history/history.dart';
-import 'package:arcana_bell/profile/profile.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:overlay_support/overlay_support.dart';
 
 import '../utils/login.dart';
@@ -28,6 +26,12 @@ class _HomeState extends State<Home> {
     super.initState();
   }
 
+  @override
+  void dispose() {
+    _pageViewController.dispose();
+    super.dispose();
+  }
+
   void setupNotification() async {
     Future<void> firebaseMessagingForegroundHandler(
         RemoteMessage message) async {
@@ -39,7 +43,9 @@ class _HomeState extends State<Home> {
       if (notification != null &&
           android != null &&
           messageId != message.messageId) {
-        messageId = message.messageId;
+        setState(() {
+          messageId = message.messageId;
+        });
         showSimpleNotification(
             Text(
               notification.title ?? '',
@@ -69,11 +75,8 @@ class _HomeState extends State<Home> {
   }
 
   int _currentIndex = 0;
-  final List<Widget> _screens = [
-    const Bells(),
-    const History(),
-    const Profile()
-  ];
+  final _pageViewController = PageController();
+  final List<Widget> _screens = [const Bells(), const History()];
 
   void onTabTapped(int index) {
     setState(() {
@@ -93,8 +96,18 @@ class _HomeState extends State<Home> {
         ],
       ),
       body: Container(
-          margin: const EdgeInsets.fromLTRB(5, 20, 5, 20),
-          child: _screens[_currentIndex]),
+        margin: const EdgeInsets.all(10),
+        child: PageView(
+          allowImplicitScrolling: true,
+          controller: _pageViewController,
+          children: _screens,
+          onPageChanged: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+        ),
+      ),
       bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
           items: const [
@@ -103,9 +116,12 @@ class _HomeState extends State<Home> {
                 label: "Dispositivos"),
             BottomNavigationBarItem(
                 icon: Icon(Icons.history), label: "Histórico"),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: "Perfil"),
           ],
-          onTap: onTabTapped),
+          onTap: (index) {
+            _pageViewController.animateToPage(index,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.bounceOut);
+          }),
     );
   }
 }

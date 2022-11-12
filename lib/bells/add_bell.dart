@@ -27,6 +27,7 @@ class AddBellState extends State<AddBell> {
 
   bool _passwordVisible = false;
   bool _isLoading = false;
+  String? _wifiName;
 
   Timer? timer;
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? configController;
@@ -39,9 +40,15 @@ class AddBellState extends State<AddBell> {
   void initState() {
     _isLoading = false;
     _passwordVisible = false;
-    [Permission.location].request();
-
+    [Permission.location]
+        .request()
+        .then((value) => info.getWifiName().then((value) => setState(() {
+              _wifiName = value;
+            })));
     super.initState();
+    info.getWifiName().then((value) => setState(() {
+          _wifiName = value;
+        }));
   }
 
   @override
@@ -74,18 +81,41 @@ class AddBellState extends State<AddBell> {
 
         await FirebaseMessaging.instance.subscribeToTopic("bell_${bell.id}");
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Configurado com sucesso'),
+          duration: Duration(seconds: 5),
+        ),
+      );
+
+      Navigator.of(context).pushReplacementNamed("home");
     } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Erro ao cadastrar campainha, verifique se o dispositivo está próximo e em modo de configuração',
+              style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.red,
+        ),
+      );
       stderr.writeln(e.toString());
     }
+  }
 
+  _setupError() {
+    configController?.close();
+    setState(() {
+      _isLoading = false;
+    });
+    provisioner?.stop();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Configurado com sucesso'),
-        duration: Duration(seconds: 5),
+        content: Text(
+            'Erro ao cadastrar campainha, verifique se o dispositivo está próximo e em modo de configuração',
+            style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.red,
       ),
     );
-
-    Navigator.of(context).pushReplacementNamed("home");
   }
 
   _startSmartConfig(context) async {
@@ -112,24 +142,13 @@ class AddBellState extends State<AddBell> {
             _saveBellInfo(context);
           });
         } catch (e) {
+          _setupError();
           stderr.writeln(e);
         }
 
         timer = Timer(const Duration(seconds: 20), () {
           if (bell.mac == null) {
-            configController?.close();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                    'Erro ao cadastrar campainha, verifique se o dispositivo está próximo e em modo de configuração',
-                    style: TextStyle(color: Colors.white)),
-                backgroundColor: Colors.red,
-              ),
-            );
-            setState(() {
-              _isLoading = false;
-            });
-            provisioner?.stop();
+            _setupError();
           }
         });
         String? ssid = await info.getWifiName();
@@ -142,6 +161,11 @@ class AddBellState extends State<AddBell> {
                   'Conecte-se ao wifi 2Ghz e Ligue a localização do aparelho'),
             ),
           );
+
+          setState(() {
+            _isLoading = false;
+          });
+          provisioner?.stop();
         } else {
           if (ssid.startsWith('"')) {
             ssid = ssid.substring(1, (ssid.length - 1));
@@ -154,6 +178,7 @@ class AddBellState extends State<AddBell> {
           ));
         }
       } catch (e) {
+        _setupError();
         stderr.writeln(e);
       }
     }
@@ -171,60 +196,79 @@ class AddBellState extends State<AddBell> {
               ? const Center(child: CircularProgressIndicator())
               : Form(
                   key: _formKey,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      TextFormField(
-                        decoration: const InputDecoration(
-                          icon: Icon(Icons.notification_add),
-                          hintText: 'Dê um nome a campainha',
-                          labelText: 'Nome *',
-                        ),
-                        // The validator receives the text that the user has entered.
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Campo obrigatório';
-                          }
-                          return null;
-                        },
-                        onSaved: (newValue) => bell.description = newValue,
+                  child: Center(
+                    child: SingleChildScrollView(
+                      clipBehavior: Clip.hardEdge,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          _wifiName != null
+                              ? Text("Conectado ao Wi-Fi: $_wifiName")
+                              : Text(
+                                  "Não conectado a nenhum Wi-Fi",
+                                  style: TextStyle(
+                                      color: Theme.of(context).errorColor),
+                                ),
+                          const SizedBox(height: 20),
+                          const Text(
+                              "Tenha certeza de estar conectado a uma rede 2.4GHZ antes de configurar a campainha"),
+                          const SizedBox(height: 20),
+                          const Text(
+                              "Pressione o botão da campainha por 5 segundos para entrar em modo de configuração"),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            decoration: const InputDecoration(
+                              icon: Icon(Icons.notification_add),
+                              hintText: 'Dê um nome a campainha',
+                              labelText: 'Nome *',
+                            ),
+                            // The validator receives the text that the user has entered.
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Campo obrigatório';
+                              }
+                              return null;
+                            },
+                            onSaved: (newValue) => bell.description = newValue,
+                          ),
+                          TextFormField(
+                            obscureText: !_passwordVisible,
+                            decoration: InputDecoration(
+                              icon: const Icon(Icons.wifi_password),
+                              hintText: 'Senha de seu Wi-fi',
+                              labelText: 'Senha Wi-fi*',
+                              suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _passwordVisible
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                    color: Theme.of(context).primaryColorDark,
+                                  ),
+                                  onPressed: () {
+                                    // Update the state i.e. toogle the state of passwordVisible variable
+                                    setState(() {
+                                      _passwordVisible = !_passwordVisible;
+                                    });
+                                  }),
+                            ),
+                            // The validator receives the text that the user has entered.
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Campo obrigatório';
+                              }
+                              return null;
+                            },
+                            onSaved: (newValue) => password = newValue,
+                          ),
+                          const SizedBox(height: 50),
+                          ElevatedButton(
+                            onPressed: () async =>
+                                await _startSmartConfig(context),
+                            child: const Text('CONFIGURAR'),
+                          ),
+                        ],
                       ),
-                      TextFormField(
-                        obscureText: !_passwordVisible,
-                        decoration: InputDecoration(
-                          icon: const Icon(Icons.wifi_password),
-                          hintText:
-                              'Qual a senha que usa para se conectar no wi-fi',
-                          labelText: 'Senha *',
-                          suffixIcon: IconButton(
-                              icon: Icon(
-                                _passwordVisible
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                                color: Theme.of(context).primaryColorDark,
-                              ),
-                              onPressed: () {
-                                // Update the state i.e. toogle the state of passwordVisible variable
-                                setState(() {
-                                  _passwordVisible = !_passwordVisible;
-                                });
-                              }),
-                        ),
-                        // The validator receives the text that the user has entered.
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Campo obrigatório';
-                          }
-                          return null;
-                        },
-                        onSaved: (newValue) => password = newValue,
-                      ),
-                      const SizedBox(height: 50),
-                      ElevatedButton(
-                        onPressed: () async => await _startSmartConfig(context),
-                        child: const Text('CONFIGURAR'),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
         ));

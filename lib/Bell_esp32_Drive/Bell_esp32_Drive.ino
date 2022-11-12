@@ -39,7 +39,8 @@ void setup() {
       delay(500);
 
       digitalWrite(LED_BUILTIN, pisca ? HIGH : LOW);
-      Serial.print(".");
+      Serial.print(timeOut);
+      Serial.print(" ");
       if(timeOut > 60){
         ESP.restart();
       }
@@ -50,10 +51,16 @@ void setup() {
 
     //Wait for WiFi to connect to AP
     Serial.println("tentando se conectar ao wifi");
+    timeOut = 0;
     while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
+      delay(200);
       digitalWrite(LED_BUILTIN, HIGH);
-      Serial.print(".");
+      Serial.print(timeOut);
+      Serial.print(" ");
+      if(timeOut > 150){
+        ESP.restart();
+      }
+      timeOut++;
     }
     Serial.println("WiFi conectado.");
 

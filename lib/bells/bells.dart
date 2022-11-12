@@ -80,36 +80,42 @@ class BellsState extends State<Bells> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      ListView.builder(
-        itemCount: bells.length,
-        shrinkWrap: true,
-        itemBuilder: (context, index) => ListTile(
-          title: Text(bells[index].description ?? "Sem descrição"),
-          trailing: IconButton(
-              onPressed: () async {
-                try {
-                  await FirebaseMessaging.instance
-                      .unsubscribeFromTopic("bell_${bells[index].id}");
-                  setState(() {
-                    userBells.remove(bells[index].id);
-                  });
-                  await FirebaseFirestore.instance
-                      .collection('user')
-                      .doc(token)
-                      .set({'bells': userBells}, SetOptions(merge: false));
-                } catch (e) {
-                  stderr.writeln(e.toString());
-                }
-                getUserBells();
-              },
-              icon: const Icon(Icons.delete)),
-        ),
-      ),
-      ElevatedButton.icon(
-          onPressed: () => Navigator.pushNamed(context, "add_bell"),
-          icon: const Icon(Icons.add),
-          label: const Text("NOVA CAMPAINHA"))
-    ]);
+    return Container(
+        margin: const EdgeInsets.fromLTRB(0, 0, 0, 60),
+        child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              ListView.builder(
+                itemCount: bells.length,
+                shrinkWrap: true,
+                clipBehavior: Clip.hardEdge,
+                itemBuilder: (context, index) => ListTile(
+                  title: Text(bells[index].description ?? "Sem descrição"),
+                  trailing: IconButton(
+                      onPressed: () async {
+                        try {
+                          await FirebaseMessaging.instance
+                              .unsubscribeFromTopic("bell_${bells[index].id}");
+                          setState(() {
+                            userBells.remove(bells[index].id);
+                          });
+                          await FirebaseFirestore.instance
+                              .collection('user')
+                              .doc(token)
+                              .set({'bells': userBells},
+                                  SetOptions(merge: false));
+                        } catch (e) {
+                          stderr.writeln(e.toString());
+                        }
+                        getUserBells();
+                      },
+                      icon: const Icon(Icons.delete)),
+                ),
+              ),
+              ElevatedButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, "add_bell"),
+                  icon: const Icon(Icons.add),
+                  label: const Text("NOVA CAMPAINHA")),
+            ]));
   }
 }
